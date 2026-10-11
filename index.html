@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aria Hub - New Listing</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: sans-serif; background: #fff; color: #222; }
+    header { padding: 16px 20px; border-bottom: 2px solid #e5e7eb; display: flex;
+             justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; color: #0b3a82; font-size: 24px; }
+    main { padding: 20px; max-width: 520px; margin: 0 auto; }
+    h2 { font-size: 26px; margin: 12px 0 20px; }
+    label { display: block; font-weight: bold; margin: 16px 0 6px; font-size: 16px; }
+    input, select, textarea { width: 100%; padding: 12px; font-size: 16px;
+      border: 2px solid #d1d5db; border-radius: 12px; background: #fff; font-family: inherit; }
+    textarea { min-height: 110px; resize: vertical; }
+    .counter { font-size: 13px; color: #666; text-align: right; margin-top: 4px; }
+    button.primary { width: 100%; margin-top: 24px; padding: 16px; font-size: 18px;
+      border: none; border-radius: 999px; background: #1e6fe0; color: #fff; cursor: pointer; }
+    #status { color: #15803d; margin-top: 12px; min-height: 22px; }
+    .listing { border: 2px solid #e5e7eb; border-radius: 16px; padding: 16px; margin-top: 12px; }
+    .listing h3 { margin: 0 0 6px; font-size: 20px; }
+    .listing .price { color: #0b3a82; font-size: 20px; }
+    .listing .meta { color: #666; margin: 6px 0; }
+    .help-btn { position: fixed; bottom: 24px; right: 20px; width: 52px; height: 52px;
+      border-radius: 50%; border: none; background: #1e6fe0; color: #fff; font-size: 24px;
+      font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor: pointer; z-index: 1000; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      z-index: 1001; align-items: center; justify-content: center; padding: 16px; }
+    .modal-box { background: #fff; max-width: 480px; width: 100%; max-height: 85vh;
+      overflow-y: auto; border-radius: 12px; padding: 20px; line-height: 1.5; }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; }
+    .modal-head h2 { margin: 0; font-size: 22px; }
+    .close { border: none; background: none; font-size: 28px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ARIA HUB</h1>
+</header>
+
+<main>
+  <h2>My new listing</h2>
+
+  <form id="listing-form">
+    <label for="name">Product or service name</label>
+    <input id="name" placeholder="e.g. Bilum Bag" required>
+
+    <label for="category">Category</label>
+    <select id="category" required>
+      <option value="">Choose a category</option>
+      <option>Electronics</option>
+      <option>Furniture</option>
+      <option>Clothing</option>
+      <option>Vehicles</option>
+      <option>Other</option>
+    </select>
+
+    <label for="price">Price (K)</label>
+    <input id="price" type="number" min="0" step="1" placeholder="e.g. 60" required>
+
+    <label for="location">Location</label>
+    <input id="location" placeholder="e.g. Port Moresby" required>
+
+    <label for="description">Description (optional, up to 300 characters)</label>
+    <textarea id="description" maxlength="300"></textarea>
+    <div class="counter"><span id="count">0</span>/300</div>
+
+    <button class="primary" type="submit">Post Listing</button>
+  </form>
+
+  <div id="status"></div>
+
+  <h2 style="font-size:22px;">All listings</h2>
+  <div id="listings"></div>
+</main>
+
+<!-- Help button -->
+<button class="help-btn" aria-label="Help" onclick="openHelp()">?</button>
+
+<!-- Usage manual -->
+<div id="help-modal" class="modal" role="dialog" aria-labelledby="help-title" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="help-title">Aria Hub Help</h2>
+      <button class="close" onclick="closeHelp()" aria-label="Close">&times;</button>
+    </div>
+
+    <h3>1. Create a listing</h3>
+    <ul>
+      <li><b>Product or service name:</b> a short, clear name, such as "Television".</li>
+      <li><b>Category:</b> choose the closest match from the list.</li>
+      <li><b>Price (K):</b> the amount in kina, numbers only, such as 300.</li>
+      <li><b>Location:</b> the town or area where the item is available.</li>
+      <li><b>Description (optional):</b> up to 300 characters. Include condition, brand, size, and how to arrange a viewing.</li>
+    </ul>
+
+    <h3>2. Post it</h3>
+    <p>Tap <b>Post Listing</b>. Your listing appears under <b>All listings</b>.</p>
+
+    <h3>Need more help?</h3>
+    <p>Contact the Aria Hub team at [your contact details here].</p>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('listing-form');
+  const listingsEl = document.getElementById('listings');
+  const statusEl = document.getElementById('status');
+  const descEl = document.getElementById('description');
+  const countEl = document.getElementById('count');
+
+  // Load saved listings from this browser
+  let listings = JSON.parse(localStorage.getItem('ariaListings') || '[]');
+
+  function render() {
+    listingsEl.innerHTML = '';
+    listings.forEach(l => {
+      const card = document.createElement('div');
+      card.className = 'listing';
+      card.innerHTML = `
+        <h3></h3>
+        <div class="price"></div>
+        <div class="meta"></div>
+        <div class="desc"></div>`;
+      card.querySelector('h3').textContent = l.name;
+      card.querySelector('.price').textContent = 'K ' + l.price;
+      card.querySelector('.meta').textContent = '📍 ' + l.location + ' · ' + l.category;
+      card.querySelector('.desc').textContent = l.description;
+      listingsEl.appendChild(card);
+    });
+  }
+
+  descEl.addEventListener('input', () => {
+    countEl.textContent = descEl.value.length;
+  });
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    listings.unshift({
+      name: document.getElementById('name').value.trim(),
+      category: document.getElementById('category').value,
+      price: document.getElementById('price').value,
+      location: document.getElementById('location').value.trim(),
+      description: descEl.value.trim()
+    });
+    localStorage.setItem('ariaListings', JSON.stringify(listings));
+    form.reset();
+    countEl.textContent = '0';
+    statusEl.textContent = 'Listing saved.';
+    render();
+  });
+
+  function openHelp() {
+    document.getElementById('help-modal').style.display = 'flex';
+  }
+  function closeHelp() {
+    document.getElementById('help-modal').style.display = 'none';
+  }
+  document.getElementById('help-modal').addEventListener('click', e => {
+    if (e.target.id === 'help-modal') closeHelp();
+  });
+
+  render();
+</script>
+
+</body>
+</html>
